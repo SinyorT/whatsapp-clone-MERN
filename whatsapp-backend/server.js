@@ -10,15 +10,20 @@ const app = express();
 const port = process.env.PORT || 9000
 
 const pusher = new Pusher({
-  appId: "1192295",
-  key: "b2bf068d1d65c8766938",
-  secret: "ad694fdd0325019d6478",
-  cluster: "eu",
-  useTLS: true
-});
+    appId: "1192295",
+    key: "b2bf068d1d65c8766938",
+    secret: "ad694fdd0325019d6478",
+    cluster: "eu",
+    useTLS: true
+  });
 
 //middleware
 app.use(express.json())
+app.use((req,res,next)=>{
+    res.setHeader("Access-Control-Allow-Origin","*")
+    res.setHeader("Access-Control-Allow-Headers","*")
+    next()
+})
 
 
 //db config
@@ -27,10 +32,34 @@ mongoose.connect(connection_url, {
     useCreateIndex: true,
     useNewUrlParser: true,
     useUnifiedTopology: true
-}, err => {
-    if (err) throw err
-    console.log("Connected to mongodb")
 });
+
+const db =mongoose.connection
+
+db.once('open',()=>{
+    console.log("Connected to mongodb")
+
+    const msgCollection =db.collection("messagecontents");
+
+    const changeStream = msgCollection.watch(); 
+    changeStream.on('change',(change)=>{
+        console.log(change)
+
+        if(change.operationType ==='insert'){
+                const messageDetails = change.fullDocument;
+
+                pusher.trigger('messages','inserted',{
+                    name:messageDetails.name,
+                    message:messageDetails.message
+                })
+
+        }else{
+            console.log('Error triggering Pusher')
+        }
+    })
+})
+
+
 // ??
 
 // api routes
