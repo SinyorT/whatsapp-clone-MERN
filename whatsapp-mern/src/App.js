@@ -27,13 +27,13 @@ function App() {
       // console.log(JSON.stringify(data));
     });
 
-    return () => {
-      channel.unbind_all();
-      channel.unsubscribe()
-    }
+    // return () => {
+    //   channel.unbind_all();
+    //   channel.unsubscribe()
+    // }
 
   }, [messages])
-   
+
   return (
     <div className="app">
       <div className="app__body">
